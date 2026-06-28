@@ -39,7 +39,7 @@ export default function AuthPage() {
         setTab('login')
       }
     } catch (err) {
-      setError(err.message)
+      setError(err.message || err.error_description || 'Signup failed. Try again.')
     } finally {
       setLoading(false)
     }

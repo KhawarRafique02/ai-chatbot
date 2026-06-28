@@ -1,8 +1,13 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { createClient } from '@/lib/supabase-server'
+import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+)
 
 const SYSTEM_PROMPTS = {
   general: `You are a helpful, intelligent AI assistant named KhawarAI. Answer questions clearly, concisely, and helpfully. Use markdown formatting when appropriate.`,
@@ -14,17 +19,12 @@ const SYSTEM_PROMPTS = {
 export async function POST(req) {
   try {
     const { messages, mode, conversationId } = await req.json()
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.0-flash',
       systemInstruction: SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.general,
     })
 
-    // Build Gemini history from previous messages
     const history = messages.slice(0, -1).map(m => ({
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.content }],
@@ -44,19 +44,14 @@ export async function POST(req) {
             controller.enqueue(new TextEncoder().encode(text))
           }
 
-          // Save assistant message to DB
           if (conversationId) {
             await supabase.from('messages').insert({
               conversation_id: conversationId,
               role: 'assistant',
               content: fullText,
             })
-
-            // Auto-title: first message of conversation
             if (messages.length === 1) {
-              const title = lastMessage.length > 60
-                ? lastMessage.slice(0, 60) + '...'
-                : lastMessage
+              const title = lastMessage.length > 60 ? lastMessage.slice(0, 60) + '...' : lastMessage
               await supabase.from('conversations')
                 .update({ title, updated_at: new Date().toISOString() })
                 .eq('id', conversationId)
