@@ -119,11 +119,11 @@ export default function ChatPage() {
   // ── Auth check ──
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) router.replace('/')
+      if (!data.session) router.replace('/login')
       else setUser(data.session.user)
     })
     const { data: listener } = supabase.auth.onAuthStateChange((_, session) => {
-      if (!session) router.replace('/')
+      if (!session) router.replace('/login')
     })
     return () => listener.subscription.unsubscribe()
   }, [])
@@ -186,7 +186,7 @@ export default function ChatPage() {
 
   const signOut = async () => {
     await supabase.auth.signOut()
-    router.replace('/')
+    router.replace('/login')
   }
 
   const sendMessage = async () => {
