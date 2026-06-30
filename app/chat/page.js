@@ -7,11 +7,10 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import {
   Bot, Plus, Send, Trash2, LogOut, Menu, X,
-  Copy, Check, ChevronDown, Loader2,
+  Copy, Check, ChevronDown, Loader2, Moon, Sun,
   Code2, Pencil, Languages, Sparkles, MessageSquare
 } from 'lucide-react'
 
-// ── Modes ──────────────────────────────────────────────────────────────────
 const MODES = [
   { id: 'general',    label: 'General',    icon: Sparkles,     color: '#8B5CF6', desc: 'General AI assistant' },
   { id: 'code',       label: 'Code',       icon: Code2,        color: '#06B6D4', desc: 'Code & debugging help' },
@@ -19,8 +18,21 @@ const MODES = [
   { id: 'translator', label: 'Translate',  icon: Languages,    color: '#10B981', desc: 'English ↔ Urdu/Hindi' },
 ]
 
-// ── Copy Button ─────────────────────────────────────────────────────────────
-function CopyBtn({ text }) {
+function getTheme(dark) {
+  return dark ? {
+    bg: '#0d0d14', bg2: '#0a0a11', surface: '#111118', surface2: '#1a1a27',
+    border: '#1e1e2e', text: '#f1f5f9', text2: '#94a3b8', text3: '#64748b', text4: '#475569',
+    accent: '#8B5CF6', accentHover: '#7C3AED', userBubble: '#8B5CF6', userText: '#ffffff',
+    aiBubbleBg: '#111118',
+  } : {
+    bg: '#F8FAFC', bg2: '#F1F5F9', surface: '#ffffff', surface2: '#F1F5F9',
+    border: '#E2E8F0', text: '#0F172A', text2: '#475569', text3: '#64748b', text4: '#94a3b8',
+    accent: '#7C3AED', accentHover: '#6D28D9', userBubble: '#7C3AED', userText: '#ffffff',
+    aiBubbleBg: '#ffffff',
+  }
+}
+
+function CopyBtn({ text, T }) {
   const [copied, setCopied] = useState(false)
   const copy = () => {
     navigator.clipboard.writeText(text)
@@ -30,8 +42,8 @@ function CopyBtn({ text }) {
   return (
     <button onClick={copy} style={{
       position: 'absolute', top: 8, right: 8,
-      background: '#2d2d3d', border: 'none', borderRadius: 6,
-      padding: '4px 8px', color: '#94a3b8', cursor: 'pointer',
+      background: T.surface2, border: 'none', borderRadius: 6,
+      padding: '4px 8px', color: T.text2, cursor: 'pointer',
       display: 'flex', alignItems: 'center', gap: 4, fontSize: 12,
     }}>
       {copied ? <><Check size={12} /> Copied</> : <><Copy size={12} /> Copy</>}
@@ -39,25 +51,33 @@ function CopyBtn({ text }) {
   )
 }
 
-// ── Markdown Renderer ───────────────────────────────────────────────────────
-function MdContent({ content }) {
+function MdContent({ content, T }) {
   return (
-    <div className="prose">
+    <div style={{ color: T.text, fontSize: 14, lineHeight: 1.7 }}>
       <ReactMarkdown
         components={{
+          p:  ({ children }) => <p style={{ margin: '6px 0', color: T.text }}>{children}</p>,
+          li: ({ children }) => <li style={{ margin: '3px 0', color: T.text }}>{children}</li>,
+          h1: ({ children }) => <h1 style={{ fontWeight: 700, fontSize: '1.4em', margin: '12px 0 6px', color: T.text }}>{children}</h1>,
+          h2: ({ children }) => <h2 style={{ fontWeight: 700, fontSize: '1.2em', margin: '12px 0 6px', color: T.text }}>{children}</h2>,
+          h3: ({ children }) => <h3 style={{ fontWeight: 700, fontSize: '1.05em', margin: '12px 0 6px', color: T.text }}>{children}</h3>,
+          strong: ({ children }) => <strong style={{ fontWeight: 600, color: T.text }}>{children}</strong>,
+          em: ({ children }) => <em style={{ fontStyle: 'italic', color: T.text2 }}>{children}</em>,
+          a:  ({ children, href }) => <a href={href} target="_blank" rel="noreferrer" style={{ color: T.accent, textDecoration: 'underline' }}>{children}</a>,
+          blockquote: ({ children }) => <blockquote style={{ borderLeft: `3px solid ${T.accent}`, paddingLeft: 12, margin: '8px 0', color: T.text2 }}>{children}</blockquote>,
           code({ node, inline, className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || '')
             const code  = String(children).replace(/\n$/, '')
             if (!inline && match) {
               return (
-                <div style={{ position: 'relative' }}>
+                <div style={{ position: 'relative', margin: '10px 0' }}>
                   <div style={{
-                    background: '#1e1e2e', borderRadius: '10px 10px 0 0',
+                    background: T.surface2, borderRadius: '10px 10px 0 0',
                     padding: '6px 14px', display: 'flex', justifyContent: 'space-between',
-                    alignItems: 'center', borderBottom: '1px solid #2d2d3d',
+                    alignItems: 'center', borderBottom: `1px solid ${T.border}`,
                   }}>
-                    <span style={{ fontSize: 12, color: '#64748b' }}>{match[1]}</span>
-                    <CopyBtn text={code} />
+                    <span style={{ fontSize: 12, color: T.text3 }}>{match[1]}</span>
+                    <CopyBtn text={code} T={T} />
                   </div>
                   <SyntaxHighlighter
                     style={oneDark}
@@ -71,7 +91,7 @@ function MdContent({ content }) {
                 </div>
               )
             }
-            return <code className={className} {...props}>{children}</code>
+            return <code style={{ background: T.surface2, padding: '2px 6px', borderRadius: 4, fontSize: '0.875em', color: T.accent, fontFamily: 'monospace' }} {...props}>{children}</code>
           }
         }}
       >
@@ -81,13 +101,12 @@ function MdContent({ content }) {
   )
 }
 
-// ── Typing Indicator ────────────────────────────────────────────────────────
-function TypingIndicator() {
+function TypingIndicator({ T }) {
   return (
     <div style={{ display: 'flex', gap: 5, padding: '8px 0' }}>
       {[0,1,2].map(i => (
         <span key={i} className="typing-dot" style={{
-          width: 8, height: 8, borderRadius: '50%', background: '#8B5CF6', display: 'block',
+          width: 8, height: 8, borderRadius: '50%', background: T.accent, display: 'block',
           animationDelay: `${i * 0.15}s`,
         }} />
       ))}
@@ -95,7 +114,6 @@ function TypingIndicator() {
   )
 }
 
-// ── Main Chat Page ──────────────────────────────────────────────────────────
 export default function ChatPage() {
   const supabase      = createClient()
   const router        = useRouter()
@@ -111,12 +129,38 @@ export default function ChatPage() {
   const [mode, setMode]             = useState('general')
   const [loading, setLoading]       = useState(false)
   const [streaming, setStreaming]   = useState(false)
-  const [sidebarOpen, setSidebar]   = useState(true)
+  const [sidebarOpen, setSidebar]   = useState(false)
   const [modeOpen, setModeOpen]     = useState(false)
+  const [dark, setDark]             = useState(true)
+  const [isMobile, setIsMobile]     = useState(false)
+  const [narrow, setNarrow]         = useState(false)
 
+  const T = getTheme(dark)
   const currentMode = MODES.find(m => m.id === mode)
 
-  // ── Auth check ──
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    const saved = localStorage.getItem('chat-theme')
+    if (saved === 'light') setDark(false)
+    const checkSize = () => {
+      const mobile = window.innerWidth < 880
+      setIsMobile(mobile)
+      setNarrow(window.innerWidth < 420)
+      setSidebar(!mobile)
+    }
+    checkSize()
+    window.addEventListener('resize', checkSize)
+    return () => {
+      document.body.style.overflow = ''
+      document.body.style.background = ''
+      window.removeEventListener('resize', checkSize)
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('chat-theme', dark ? 'dark' : 'light')
+  }, [dark])
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) router.replace('/login')
@@ -128,18 +172,15 @@ export default function ChatPage() {
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  // ── Load conversations ──
   useEffect(() => {
     if (!user) return
     loadConversations()
   }, [user])
 
-  // ── Scroll to bottom ──
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, streaming])
 
-  // ── Auto-resize textarea ──
   useEffect(() => {
     const ta = textareaRef.current
     if (ta) { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 160) + 'px' }
@@ -167,6 +208,7 @@ export default function ChatPage() {
     setActiveConv(conv)
     setMode(conv.mode || 'general')
     await loadMessages(conv.id)
+    if (isMobile) setSidebar(false)
     inputRef.current?.focus()
   }
 
@@ -174,6 +216,7 @@ export default function ChatPage() {
     setActiveConv(null)
     setMessages([])
     setInput('')
+    if (isMobile) setSidebar(false)
     inputRef.current?.focus()
   }
 
@@ -195,7 +238,6 @@ export default function ChatPage() {
     setInput('')
     setLoading(true)
 
-    // Create conversation if needed
     let convId = activeConv?.id
     if (!convId) {
       const { data: conv } = await supabase
@@ -208,7 +250,6 @@ export default function ChatPage() {
       setConvs(prev => [conv, ...prev])
     }
 
-    // Save user message
     const { data: userMsg } = await supabase
       .from('messages')
       .insert({ conversation_id: convId, role: 'user', content: text })
@@ -220,7 +261,6 @@ export default function ChatPage() {
     setLoading(false)
     setStreaming(true)
 
-    // Placeholder for streaming
     const placeholder = { id: 'streaming', role: 'assistant', content: '' }
     setMessages(prev => [...prev, placeholder])
 
@@ -250,8 +290,6 @@ export default function ChatPage() {
         ))
       }
 
-      // Replace placeholder with real message
-      await loadMessages(convId)
       await loadConversations()
     } catch (err) {
       setMessages(prev => prev.map(m =>
@@ -266,75 +304,77 @@ export default function ChatPage() {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
   }
 
-  // ── Styles ──
-  const S = {
-    sidebar: {
-      width: sidebarOpen ? 260 : 0,
-      minWidth: sidebarOpen ? 260 : 0,
-      background: '#0a0a11',
-      borderRight: '1px solid #1e1e2e',
-      display: 'flex', flexDirection: 'column',
-      overflow: 'hidden',
-      transition: 'width 0.25s ease, min-width 0.25s ease',
-    },
-    convBtn: (active) => ({
-      width: '100%', textAlign: 'left', padding: '10px 12px',
-      borderRadius: 8, cursor: 'pointer', border: 'none',
-      background: active ? '#1a1a27' : 'transparent',
-      color: active ? '#f1f5f9' : '#94a3b8',
-      fontSize: 13, transition: 'all 0.15s',
-      display: 'flex', alignItems: 'center', gap: 8,
-    }),
-  }
-
   return (
-    <div style={{ display: 'flex', height: '100dvh', overflow: 'hidden', background: '#0d0d14' }}>
+    <div style={{ display: 'flex', height: '100dvh', overflow: 'hidden', background: T.bg, position: 'relative' }}>
 
-      {/* ── SIDEBAR ── */}
-      <aside style={S.sidebar}>
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebar(false)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 40,
+        }} />
+      )}
+
+      <aside style={{
+        width: sidebarOpen ? 260 : 0,
+        minWidth: sidebarOpen ? 260 : 0,
+        background: T.bg2,
+        borderRight: `1px solid ${T.border}`,
+        display: 'flex', flexDirection: 'column',
+        overflow: 'hidden',
+        transition: 'width 0.25s ease, min-width 0.25s ease',
+        position: isMobile ? 'fixed' : 'relative',
+        top: 0, left: 0, bottom: 0, zIndex: 45,
+        height: '100%',
+      }}>
         <div style={{ padding: '12px 12px 8px', flexShrink: 0 }}>
-          {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', marginBottom: 8 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 9,
-              background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <Bot size={17} color="#fff" />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 4px', marginBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: 9,
+                background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                <Bot size={17} color="#fff" />
+              </div>
+              <span style={{ fontWeight: 800, fontSize: 15, color: T.text }}>KhawarAI</span>
             </div>
-            <span style={{ fontWeight: 800, fontSize: 15, color: '#f1f5f9' }}>KhawarAI</span>
+            {isMobile && (
+              <button onClick={() => setSidebar(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.text2, padding: 4 }}>
+                <X size={18} />
+              </button>
+            )}
           </div>
 
-          {/* New Chat */}
           <button onClick={newChat} style={{
             width: '100%', padding: '9px 14px', borderRadius: 9,
-            background: '#8B5CF6', color: '#fff', border: 'none',
+            background: T.accent, color: '#fff', border: 'none',
             fontSize: 13, fontWeight: 600, cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: 7,
-            transition: 'background 0.2s',
-          }}
-            onMouseEnter={e => e.currentTarget.style.background = '#7C3AED'}
-            onMouseLeave={e => e.currentTarget.style.background = '#8B5CF6'}
-          >
+          }}>
             <Plus size={15} /> New Chat
           </button>
         </div>
 
-        {/* Conversation list */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px' }}>
           {conversations.length === 0 && (
-            <p style={{ fontSize: 12, color: '#334155', textAlign: 'center', padding: '20px 8px' }}>
+            <p style={{ fontSize: 12, color: T.text4, textAlign: 'center', padding: '20px 8px' }}>
               No conversations yet
             </p>
           )}
           {conversations.map(conv => (
             <div key={conv.id}
               style={{ position: 'relative', marginBottom: 2 }}
-              onMouseEnter={e => e.currentTarget.querySelector('.del-btn').style.opacity = '1'}
-              onMouseLeave={e => e.currentTarget.querySelector('.del-btn').style.opacity = '0'}
+              onMouseEnter={e => { const b = e.currentTarget.querySelector('.del-btn'); if (b) b.style.opacity = '1' }}
+              onMouseLeave={e => { const b = e.currentTarget.querySelector('.del-btn'); if (b) b.style.opacity = '0' }}
             >
               <button onClick={() => selectConversation(conv)}
-                style={S.convBtn(activeConv?.id === conv.id)}>
+                style={{
+                  width: '100%', textAlign: 'left', padding: '10px 12px',
+                  borderRadius: 8, cursor: 'pointer', border: 'none',
+                  background: activeConv?.id === conv.id ? T.surface2 : 'transparent',
+                  color: activeConv?.id === conv.id ? T.text : T.text2,
+                  fontSize: 13,
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }}>
                 <MessageSquare size={13} style={{ flexShrink: 0, opacity: 0.6 }} />
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
                   {conv.title || 'New Chat'}
@@ -345,7 +385,7 @@ export default function ChatPage() {
                 style={{
                   position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
                   background: 'none', border: 'none', cursor: 'pointer',
-                  color: '#ef4444', opacity: 0, transition: 'opacity 0.15s', padding: 4,
+                  color: '#ef4444', opacity: isMobile ? 1 : 0, transition: 'opacity 0.15s', padding: 4,
                 }}>
                 <Trash2 size={13} />
               </button>
@@ -353,8 +393,7 @@ export default function ChatPage() {
           ))}
         </div>
 
-        {/* User & logout */}
-        <div style={{ padding: '8px 12px 14px', borderTop: '1px solid #1e1e2e', flexShrink: 0 }}>
+        <div style={{ padding: '8px 12px 14px', borderTop: `1px solid ${T.border}`, flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 4px' }}>
             <div style={{
               width: 30, height: 30, borderRadius: '50%',
@@ -364,77 +403,64 @@ export default function ChatPage() {
               {user?.email?.[0]?.toUpperCase() || 'U'}
             </div>
             <div style={{ flex: 1, overflow: 'hidden' }}>
-              <div style={{ fontSize: 12, color: '#f1f5f9', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ fontSize: 12, color: T.text, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user?.email}
               </div>
             </div>
             <button onClick={signOut} title="Sign out"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', padding: 4, borderRadius: 6, transition: 'color 0.2s' }}
-              onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
-              onMouseLeave={e => e.currentTarget.style.color = '#64748b'}
-            >
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.text3, padding: 4, borderRadius: 6 }}>
               <LogOut size={15} />
             </button>
           </div>
         </div>
       </aside>
 
-      {/* ── MAIN ── */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
 
-        {/* Top bar */}
         <div style={{
-          padding: '10px 16px', borderBottom: '1px solid #1e1e2e',
-          display: 'flex', alignItems: 'center', gap: 12,
-          background: '#0d0d14', flexShrink: 0,
+          padding: '10px 12px', borderBottom: `1px solid ${T.border}`,
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: T.bg, flexShrink: 0,
         }}>
           <button onClick={() => setSidebar(p => !p)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', padding: 6, borderRadius: 8 }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.text3, padding: 6, borderRadius: 8, flexShrink: 0 }}
           >
-            {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+            <Menu size={18} />
           </button>
 
-          {/* Mode selector */}
           <div style={{ position: 'relative' }}>
             <button onClick={() => setModeOpen(p => !p)}
               style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                background: '#1a1a27', border: '1px solid #2d2d3d',
-                borderRadius: 9, padding: '7px 12px', cursor: 'pointer',
-                color: '#f1f5f9', fontSize: 13, fontWeight: 600,
-                transition: 'border-color 0.2s',
+                display: 'flex', alignItems: 'center', gap: 6,
+                background: T.surface2, border: `1px solid ${T.border}`,
+                borderRadius: 9, padding: '7px 10px', cursor: 'pointer',
+                color: T.text, fontSize: 13, fontWeight: 600,
               }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = '#8B5CF6'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = '#2d2d3d'}
             >
               <currentMode.icon size={14} color={currentMode.color} />
-              {currentMode.label}
-              <ChevronDown size={13} color="#64748b" style={{ transition: 'transform 0.2s', transform: modeOpen ? 'rotate(180deg)' : 'none' }} />
+              {!narrow && currentMode.label}
+              <ChevronDown size={13} color={T.text3} style={{ transition: 'transform 0.2s', transform: modeOpen ? 'rotate(180deg)' : 'none' }} />
             </button>
 
             {modeOpen && (
               <div style={{
                 position: 'absolute', top: '110%', left: 0, zIndex: 100,
-                background: '#111118', border: '1px solid #2d2d3d', borderRadius: 12,
-                padding: 6, minWidth: 200, boxShadow: '0 16px 40px rgba(0,0,0,0.5)',
+                background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12,
+                padding: 6, minWidth: 200, boxShadow: '0 16px 40px rgba(0,0,0,0.3)',
               }}>
                 {MODES.map(m => (
                   <button key={m.id}
                     onClick={() => { setMode(m.id); setModeOpen(false) }}
                     style={{
                       width: '100%', textAlign: 'left', padding: '9px 12px',
-                      background: mode === m.id ? '#1a1a27' : 'none',
+                      background: mode === m.id ? T.surface2 : 'none',
                       border: 'none', borderRadius: 8, cursor: 'pointer',
                       display: 'flex', alignItems: 'center', gap: 10,
-                      transition: 'background 0.15s',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#1a1a27'}
-                    onMouseLeave={e => e.currentTarget.style.background = mode === m.id ? '#1a1a27' : 'none'}
-                  >
+                    }}>
                     <m.icon size={15} color={m.color} />
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#f1f5f9' }}>{m.label}</div>
-                      <div style={{ fontSize: 11, color: '#64748b' }}>{m.desc}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{m.label}</div>
+                      <div style={{ fontSize: 11, color: T.text3 }}>{m.desc}</div>
                     </div>
                   </button>
                 ))}
@@ -443,10 +469,18 @@ export default function ChatPage() {
           </div>
 
           <div style={{ flex: 1 }} />
-          <span style={{ fontSize: 12, color: '#334155' }}>Powered by Gemini</span>
+
+          <button onClick={() => setDark(d => !d)} title="Toggle theme"
+            style={{
+              width: 34, height: 34, borderRadius: 9, flexShrink: 0,
+              background: T.surface2, border: `1px solid ${T.border}`,
+              cursor: 'pointer', color: T.text2,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+            {dark ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
         </div>
 
-        {/* Messages */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 0' }} onClick={() => setModeOpen(false)}>
           {messages.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 16, padding: 24, textAlign: 'center' }}>
@@ -458,14 +492,14 @@ export default function ChatPage() {
                 <Bot size={32} color="#fff" />
               </div>
               <div>
-                <h2 style={{ fontWeight: 800, fontSize: 20, color: '#f1f5f9', marginBottom: 6 }}>
+                <h2 style={{ fontWeight: 800, fontSize: 20, color: T.text, marginBottom: 6 }}>
                   Hi, I'm KhawarAI!
                 </h2>
-                <p style={{ fontSize: 14, color: '#64748b', maxWidth: 360 }}>
+                <p style={{ fontSize: 14, color: T.text2, maxWidth: 360 }}>
                   Your intelligent AI assistant. Ask me anything — code help, creative writing, translation, or general questions.
                 </p>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, maxWidth: 500, width: '100%' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px,1fr))', gap: 10, maxWidth: 500, width: '100%' }}>
                 {[
                   { text: 'Write a React component for a card UI', mode: 'code' },
                   { text: 'Translate "Hello, how are you?" to Urdu', mode: 'translator' },
@@ -475,56 +509,52 @@ export default function ChatPage() {
                   <button key={i}
                     onClick={() => { setInput(s.text); setMode(s.mode); textareaRef.current?.focus() }}
                     style={{
-                      padding: '10px 14px', background: '#111118', border: '1px solid #1e1e2e',
-                      borderRadius: 10, fontSize: 13, color: '#94a3b8', cursor: 'pointer',
-                      textAlign: 'left', lineHeight: 1.4, transition: 'all 0.2s',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#8B5CF6'; e.currentTarget.style.color = '#f1f5f9' }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e1e2e'; e.currentTarget.style.color = '#94a3b8' }}
-                  >
+                      padding: '10px 14px', background: T.surface, border: `1px solid ${T.border}`,
+                      borderRadius: 10, fontSize: 13, color: T.text2, cursor: 'pointer',
+                      textAlign: 'left', lineHeight: 1.4,
+                    }}>
                     {s.text}
                   </button>
                 ))}
               </div>
             </div>
           ) : (
-            <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 16px' }}>
+            <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 14px' }}>
               {messages.map((msg, idx) => (
                 <div key={msg.id || idx} className="msg-enter" style={{
-                  display: 'flex', gap: 12, marginBottom: 24,
+                  display: 'flex', gap: 10, marginBottom: 22,
                   justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
                 }}>
                   {msg.role === 'assistant' && (
                     <div style={{
-                      width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+                      width: 30, height: 30, borderRadius: 9, flexShrink: 0,
                       background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 2,
                     }}>
-                      <Bot size={16} color="#fff" />
+                      <Bot size={15} color="#fff" />
                     </div>
                   )}
 
-                  <div style={{ maxWidth: msg.role === 'user' ? '75%' : '100%' }}>
+                  <div style={{ maxWidth: msg.role === 'user' ? '82%' : 'calc(100% - 40px)' }}>
                     {msg.role === 'user' ? (
                       <div style={{
-                        background: '#8B5CF6', color: '#fff',
-                        padding: '10px 16px', borderRadius: '16px 16px 4px 16px',
+                        background: T.userBubble, color: T.userText,
+                        padding: '10px 15px', borderRadius: '16px 16px 4px 16px',
                         fontSize: 14, lineHeight: 1.6, whiteSpace: 'pre-wrap',
                       }}>
                         {msg.content}
                       </div>
                     ) : (
                       <div style={{
-                        background: '#111118', border: '1px solid #1e1e2e',
-                        padding: '14px 18px', borderRadius: '4px 16px 16px 16px',
-                        fontSize: 14,
+                        background: T.aiBubbleBg, border: `1px solid ${T.border}`,
+                        padding: '13px 16px', borderRadius: '4px 16px 16px 16px',
                       }}>
                         {msg.id === 'streaming' && msg.content === '' ? (
-                          <TypingIndicator />
+                          <TypingIndicator T={T} />
                         ) : (
                           <>
-                            <MdContent content={msg.content} />
-                            {msg.id === 'streaming' && <span className="cursor" style={{ color: '#8B5CF6' }}>▌</span>}
+                            <MdContent content={msg.content} T={T} />
+                            {msg.id === 'streaming' && <span className="cursor" style={{ color: T.accent }}>▌</span>}
                           </>
                         )}
                       </div>
@@ -537,59 +567,54 @@ export default function ChatPage() {
           )}
         </div>
 
-        {/* Input area */}
         <div style={{
-          padding: '12px 16px 16px', borderTop: '1px solid #1e1e2e',
-          background: '#0d0d14', flexShrink: 0,
+          padding: '10px 12px 14px', borderTop: `1px solid ${T.border}`,
+          background: T.bg, flexShrink: 0,
         }}>
           <div style={{ maxWidth: 760, margin: '0 auto' }}>
             <div style={{
-              display: 'flex', gap: 10, alignItems: 'flex-end',
-              background: '#111118', border: '1px solid #2d2d3d',
-              borderRadius: 14, padding: '10px 12px',
-              transition: 'border-color 0.2s',
-            }}
-              onFocusCapture={e => e.currentTarget.style.borderColor = '#8B5CF6'}
-              onBlurCapture={e => e.currentTarget.style.borderColor = '#2d2d3d'}
-            >
+              display: 'flex', gap: 8, alignItems: 'flex-end',
+              background: T.surface, border: `1px solid ${T.border}`,
+              borderRadius: 14, padding: '9px 10px',
+            }}>
               <textarea
                 ref={e => { textareaRef.current = e; inputRef.current = e }}
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={onKeyDown}
-                placeholder={`Message KhawarAI (${currentMode.label} mode)...`}
+                placeholder="Message KhawarAI..."
                 rows={1}
                 style={{
                   flex: 1, background: 'none', border: 'none', outline: 'none',
-                  color: '#f1f5f9', fontSize: 14, resize: 'none', lineHeight: 1.6,
-                  maxHeight: 160, overflowY: 'auto', padding: '2px 0',
+                  color: T.text, fontSize: 14, resize: 'none', lineHeight: 1.6,
+                  maxHeight: 160, overflowY: 'auto', padding: '2px 4px',
                 }}
               />
               <button
                 onClick={sendMessage}
                 disabled={!input.trim() || loading || streaming}
                 style={{
-                  width: 36, height: 36, borderRadius: 9, flexShrink: 0,
-                  background: (!input.trim() || loading || streaming) ? '#1a1a27' : '#8B5CF6',
+                  width: 34, height: 34, borderRadius: 9, flexShrink: 0,
+                  background: (!input.trim() || loading || streaming) ? T.surface2 : T.accent,
                   border: 'none', cursor: (!input.trim() || loading || streaming) ? 'not-allowed' : 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'background 0.2s', color: '#fff',
+                  color: '#fff',
                 }}
               >
                 {loading || streaming
-                  ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                  : <Send size={15} />
+                  ? <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />
+                  : <Send size={14} />
                 }
               </button>
             </div>
-            <p style={{ textAlign: 'center', fontSize: 11, color: '#1e293b', marginTop: 8 }}>
+            <p style={{ textAlign: 'center', fontSize: 11, color: T.text4, marginTop: 6 }}>
               Press Enter to send · Shift+Enter for new line
             </p>
           </div>
         </div>
       </main>
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } } @keyframes blink { 0%,100% { opacity: 1 } 50% { opacity: 0 } } .cursor { animation: blink .8s step-end infinite }`}</style>
     </div>
   )
 }
