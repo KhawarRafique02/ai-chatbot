@@ -2,7 +2,7 @@ import './globals.css'
 
 export const metadata = {
   title: 'KhawarAI – Smart AI Chat',
-  description: 'Multi-purpose AI chatbot powered by Google Gemini. Built with Next.js & Supabase.',
+  description: 'Multi-purpose AI chatbot powered by Groq AI. Built with Next.js & Supabase.',
 }
 
 export default function RootLayout({ children }) {

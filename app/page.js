@@ -103,7 +103,7 @@ export default function HomePage() {
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: S.glow, border: `1px solid ${S.accent}`, borderRadius: 100, padding: '5px 14px', marginBottom: 24, fontSize: 12, color: S.accent, fontWeight: 600 }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22C55E', flexShrink: 0 }} />
-            Powered by Google Gemini AI · Free to use
+            Powered by Groq AI · Free to use
           </div>
           <h1 className="hero-title" style={{ fontWeight: 800, lineHeight: 1.2, marginBottom: 14, color: S.text, marginLeft: 'auto', marginRight: 'auto' }}>
             Your intelligent
@@ -236,7 +236,7 @@ export default function HomePage() {
             <div style={{ width: 26, height: 26, borderRadius: 8, background: `linear-gradient(135deg,${S.accent},${S.accent2})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, fontWeight: 700 }}>K</div>
             <span style={{ fontWeight: 700, fontSize: 13, color: S.text }}>KhawarAI</span>
           </div>
-          <span style={{ fontSize: 11.5, color: S.text3 }}>© 2025 Khawar Rafique · Built with Next.js and Google Gemini</span>
+          <span style={{ fontSize: 11.5, color: S.text3 }}>© 2025 Khawar Rafique · Built with Next.js and Groq AI</span>
           <div style={{ display: 'flex', gap: 18 }}>
             <a onClick={() => go('/chat')} style={{ fontSize: 12, color: S.text3, cursor: 'pointer', textDecoration: 'none' }}>Chat</a>
             <a onClick={() => scrollTo('support')} style={{ fontSize: 12, color: S.text3, cursor: 'pointer', textDecoration: 'none' }}>Support</a>

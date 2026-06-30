@@ -145,7 +145,7 @@ export default function AuthPage() {
         </div>
 
         <p style={{ textAlign: 'center', fontSize: 12, color: '#334155', marginTop: 20 }}>
-          Powered by Google Gemini AI · Built by Khawar Rafique
+          Powered by Groq AI · Built by Khawar Rafique
         </p>
       </div>
 
